@@ -371,7 +371,8 @@ async function searchNPI(zipcode, filters) {
         });
 
         if (filters.npiNumber) params.append('number', filters.npiNumber);
-        if (filters.taxonomy) params.append('taxonomy_description', filters.taxonomy);
+        if (filters.taxonomy) params.append('taxonomy', filters.taxonomy);
+        if (filters.taxonomy_description) params.append('taxonomy_description', filters.taxonomy_description);
         if (filters.npiType) params.append('enumeration_type', filters.npiType);
         if (filters.firstName) params.append('first_name', filters.firstName);
         if (filters.lastName) params.append('last_name', filters.lastName);

@@ -4,22 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NPPES NPI Registry Lookup</title>
+    <title> NPI Registry Provider Lookup</title>
     <link rel="stylesheet" href="styles.css?v=3">
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>NPPES NPI Registry Lookup</h1>
-            <p class="subtitle">Batch search providers by Zip Code with advanced filtering</p>
+            <h1> NPI Registry Provider Lookup</h1>
+            <p class="subtitle">Download a CSV file based on Search criteria and target Zip Code with advanced filtering. Data output includes practice locations and contact information. </p>
         </header>
 
         <div class="card search-card">
             <div class="main-search">
                 <label for="zipcodes" class="main-label">
-                    <span class="icon">📍</span> Target Zip Codes
-                    <small>Enter multiple zip codes (one per line)</small>
+                    <span class="icon">📍</span> Search Target Zip Codes
+                    <small>Enter one zipcode per line</small>
                 </label>
                 <textarea id="zipcodes" rows="6" placeholder="77478&#10;10001&#10;90210"></textarea>
             </div>
@@ -109,7 +109,7 @@
                 <!-- Section 3: Professional Criteria Filters -->
                 <div class="filter-section">
                     <div class="section-header">
-                        <h3>🏥 Professional Criteria</h3>
+                        <h3>🏥 License Criteria</h3>
                         <p class="text-muted">Filter by provider type, specialty, and results limit</p>
                     </div>
                     <div class="filters-grid professional-grid">
@@ -137,7 +137,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="limit">Limit per Zip</label>
+                            <label for="limit">Entries to Download</label>
                             <select id="limit">
                                 <option value="10">10</option>
                                 <option value="50">50</option>

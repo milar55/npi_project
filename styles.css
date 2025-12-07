@@ -16,11 +16,14 @@ body {
     margin: 0;
     padding: 20px;
     line-height: 1.6;
+    box-sizing: border-box;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 header {
@@ -45,6 +48,8 @@ h1 {
     padding: 25px;
     margin-bottom: 25px;
     transition: box-shadow 0.3s ease;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .card:hover {
@@ -59,10 +64,12 @@ h1 {
 
 .main-search {
     width: 100%;
+    max-width: 100%;
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #e9ecef;
+    box-sizing: border-box;
 }
 
 .main-label {
@@ -86,12 +93,14 @@ h1 {
 
 textarea {
     width: 100%;
+    max-width: 100%;
     padding: 12px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-family: monospace;
     resize: vertical;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
 }
 
 textarea:focus {
@@ -117,6 +126,7 @@ textarea:hover {
 .form-group {
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .form-group label {
@@ -126,11 +136,13 @@ textarea:hover {
 }
 
 input[type="text"],
+input[type="email"],
 select {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -314,26 +326,63 @@ tr:hover {
 
 .autocomplete-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     left: 0;
     right: 0;
     border: 1px solid var(--border-color);
-    border-top: none;
-    max-height: 150px;
+    max-height: 280px;
     overflow-y: auto;
     background: white;
     z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 6px;
+    margin-top: 2px;
 }
 
 .autocomplete-item {
-    padding: 8px 12px;
+    padding: 10px 14px;
     cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.15s ease;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item strong {
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+.autocomplete-item small {
+    color: #666;
+    font-size: 0.85em;
 }
 
 .autocomplete-item:hover, .autocomplete-item.active {
-    background-color: #f0f8ff;
+    background-color: #e8f4fd;
+}
+
+/* Custom scrollbar for dropdown */
+.autocomplete-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #999;
 }
 
 /* Multi-select Styles */
@@ -436,6 +485,22 @@ tr:hover {
 @media (max-width: 768px) {
     .professional-grid {
         grid-template-columns: 1fr;
+    }
+
+    .identity-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    .main-search {
+        padding: 15px;
     }
 }
 

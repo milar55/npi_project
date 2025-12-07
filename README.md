@@ -1,5 +1,7 @@
 # NPI Registry Lookup Tool
 
+![NPI Lookup Interface](images/main-interface.png)
+
 Web tool to search the NPPES NPI Registry for healthcare providers with batch processing and CSV export.
 
 ## Features
@@ -46,6 +48,8 @@ Web tool to search the NPPES NPI Registry for healthcare providers with batch pr
 2. Optional: Add filters (name, specialty, state)
 3. Click "Start Batch Search"
 4. Download CSV results
+
+![Search Results](images/results-table.png)
 
 
 ## Troubleshooting

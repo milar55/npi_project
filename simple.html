@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPI Lookup - OB/GYN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        input,
+        button,
+        textarea {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        textarea {
+            width: 300px;
+            height: 100px;
+            font-family: monospace;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+        }
+
+        .success {
+            background: #efe;
+            color: #060;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🏥 NPPES NPI Registry - OB/GYN Providers</h1>
+
+    <div class="controls">
+        <div>
+            <label><strong>Zip Codes</strong> (one per line):<br>
+                <textarea id="zipcodes">77478</textarea>
+            </label>
+        </div>
+        <div>
+            <label>Results per zip: <input type="number" id="limit" value="50" min="1" max="200" /></label>
+        </div>
+        <button onclick="searchAll()">🔍 Search All Zip Codes</button>
+        <button onclick="downloadCSV()">⬇️ Download CSV</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="table-wrapper">
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let allData = [];
+
+        async function searchAll() {
+            const zipcodesText = document.getElementById('zipcodes').value;
+            const limit = document.getElementById('limit').value;
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+
+            const zipcodes = zipcodesText.split('\n').map(z => z.trim()).filter(z => z);
+
+            if (zipcodes.length === 0) {
+                alert('Please enter at least one zip code');
+                return;
+            }
+
+            allData = [];
+            results.innerHTML = '';
+            status.textContent = `Searching ${zipcodes.length} zip codes...`;
+            status.className = '';
+
+            let completed = 0;
+
+            for (const zipcode of zipcodes) {
+                try {
+                    status.textContent = `Searching ${zipcode}... (${completed + 1}/${zipcodes.length})`;
+
+                    const url = `/api/npi?zipcode=${zipcode}&limit=${limit}`;
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const providers = data.results || [];
+                    allData.push(...providers);
+
+                    completed++;
+
+                } catch (error) {
+                    console.error(`Error for ${zipcode}:`, error);
+                    status.textContent = `Error searching ${zipcode}: ${error.message}`;
+                    status.className = 'error';
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            status.textContent = `Found ${allData.length} providers across ${zipcodes.length} zip codes`;
+            status.className = 'success';
+
+            displayTable(allData);
+        }
+
+        function displayTable(providers) {
+            if (providers.length === 0) {
+                document.getElementById('results').innerHTML = '<p>No results found.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            html += '<th>NPI</th>';
+            html += '<th>Name</th>';
+            html += '<th>Type</th>';
+            html += '<th>Specialty</th>';
+            html += '<th>Mailing Address</th>';
+            html += '<th>Mailing City</th>';
+            html += '<th>Mailing State</th>';
+            html += '<th>Mailing Zip</th>';
+            html += '<th>Practice Address</th>';
+            html += '<th>Practice City</th>';
+            html += '<th>Practice State</th>';
+            html += '<th>Practice Zip</th>';
+            html += '<th>Phone</th>';
+            html += '</tr></thead><tbody>';
+
+            providers.forEach(p => {
+                const basic = p.basic || {};
+                const addresses = p.addresses || [];
+                const taxonomies = p.taxonomies || [];
+
+                const mailingAddr = addresses.find(a => a.address_purpose === 'MAILING') || {};
+                const practiceAddr = addresses.find(a => a.address_purpose === 'LOCATION') || {};
+                const primaryTax = taxonomies.find(t => t.primary) || taxonomies[0] || {};
+
+                const name = basic.organization_name || `${basic.first_name || ''} ${basic.last_name || ''}`.trim();
+
+                html += '<tr>';
+                html += `<td>${p.number || ''}</td>`;
+                html += `<td>${name}</td>`;
+                html += `<td>${p.enumeration_type || ''}</td>`;
+                html += `<td>${primaryTax.desc || ''}</td>`;
+
+                // Mailing address
+                html += `<td>${mailingAddr.address_1 || ''}</td>`;
+                html += `<td>${mailingAddr.city || ''}</td>`;
+                html += `<td>${mailingAddr.state || ''}</td>`;
+                html += `<td>${formatZip(mailingAddr.postal_code)}</td>`;
+
+                // Practice address
+                html += `<td>${practiceAddr.address_1 || ''}</td>`;
+                html += `<td>${practiceAddr.city || ''}</td>`;
+                html += `<td>${practiceAddr.state || ''}</td>`;
+                html += `<td>${formatZip(practiceAddr.postal_code)}</td>`;
+
+                html += `<td>${practiceAddr.telephone_number || mailingAddr.telephone_number || ''}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function formatZip(zip) {
+            if (!zip) return '';
+            const cleaned = zip.toString().replace(/[-\s]/g, '');
+            if (cleaned.length === 9) {
+                return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
+            }
+            return cleaned;
+        }
+
+        function downloadCSV() {
+            if (allData.length === 0) {
+                alert('No data to download. Please search first.');
+                return;
+            }
+
+            const headers = ['NPI', 'Type', 'First Name', 'Last Name', 'Organization', 'Credential', 'Gender', 'Taxonomy Code', 'Taxonomy', 'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing Zip', 'Practice Address', 'Practice City', 'Practice State', 'Practice Zip', 'Phone'];
+
+            const rows = allData.map(p => {
+                const basic = p.basic || {};
+                const addresses = p.addresses || [];
+                const taxonomies = p.taxonomies || [];
+                const mailingAddr = addresses.find(a => a.address_purpose === 'MAILING') || {};
+                const practiceAddr = addresses.find(a => a.address_purpose === 'LOCATION') || {};
+                const primaryTax = taxonomies.find(t => t.primary) || taxonomies[0] || {};
+
+                return [
+                    p.number || '',
+                    p.enumeration_type || '',
+                    basic.first_name || '',
+                    basic.last_name || '',
+                    basic.organization_name || '',
+                    basic.credential || '',
+                    basic.gender || '',
+                    primaryTax.code || '',
+                    primaryTax.desc || '',
+                    mailingAddr.address_1 || '',
+                    mailingAddr.city || '',
+                    mailingAddr.state || '',
+                    formatZip(mailingAddr.postal_code),
+                    practiceAddr.address_1 || '',
+                    practiceAddr.city || '',
+                    practiceAddr.state || '',
+                    formatZip(practiceAddr.postal_code),
+                    practiceAddr.telephone_number || mailingAddr.telephone_number || ''
+                ];
+            });
+
+            const csv = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `obgyn_npi_results_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPI Test - Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+        }
+
+        .success {
+            background: #efe;
+            color: #060;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>NPPES NPI Registry - Simple Test</h1>
+
+    <div class="controls">
+        <label>Zip Code: <input type="text" id="zipcode" value="77478" /></label>
+        <label>Limit: <input type="number" id="limit" value="10" min="1" max="200" /></label>
+        <button onclick="searchNPI()">Search</button>
+        <button onclick="downloadCSV()">Download CSV</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="results"></div>
+
+    <script>
+        let currentData = [];
+
+        async function searchNPI() {
+            const zipcode = document.getElementById('zipcode').value;
+            const limit = document.getElementById('limit').value;
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+
+            status.textContent = 'Searching...';
+            status.className = '';
+            results.innerHTML = '';
+
+            try {
+                // Use local proxy to avoid CORS
+                const url = `/api/npi?version=2.1&taxonomy=Obstetrics%20%26%20Gynecology&zipcode=${zipcode}&limit=${limit}&country_code=US`;
+
+                console.log('Fetching:', url);
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                currentData = data.results || [];
+
+                status.textContent = `Found ${currentData.length} providers`;
+                status.className = 'success';
+
+                displayTable(currentData);
+
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                status.className = 'error';
+                console.error('Full error:', error);
+            }
+        }
+
+        function displayTable(providers) {
+            if (providers.length === 0) {
+                document.getElementById('results').innerHTML = '<p>No results found.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            html += '<th>NPI</th>';
+            html += '<th>Status</th>';
+            html += '<th>Name</th>';
+            html += '<th>Type</th>';
+            html += '<th>Specialty</th>';
+            html += '<th>Location Address</th>';
+            html += '<th>Mailing Address</th>';
+            html += '<th>Phone</th>';
+            html += '</tr></thead><tbody>';
+
+            providers.forEach(p => {
+                const basic = p.basic || {};
+                const addresses = p.addresses || [];
+                const taxonomies = p.taxonomies || [];
+
+                const locationAddr = addresses.find(a => a.address_purpose === 'LOCATION') || addresses[0] || {};
+                const mailingAddr = addresses.find(a => a.address_purpose === 'MAILING') || {};
+                const primaryTax = taxonomies.find(t => t.primary) || taxonomies[0] || {};
+
+                const name = basic.organization_name || `${basic.first_name || ''} ${basic.last_name || ''}`.trim();
+                const status = basic.status === 'A' ? 'Active' : (basic.status || 'Unknown');
+
+                const formatAddr = (addr) => {
+                    if (!addr.address_1) return '';
+                    let full = addr.address_1;
+                    if (addr.address_2) full += `<br><small>${addr.address_2}</small>`;
+                    full += `<br>${addr.city || ''}, ${addr.state || ''} ${formatZip(addr.postal_code)}`;
+                    return full;
+                };
+
+                html += '<tr>';
+                html += `<td>${p.number || ''}</td>`;
+                html += `<td>${status}</td>`;
+                html += `<td>${name}</td>`;
+                html += `<td>${p.enumeration_type || ''}</td>`;
+                html += `<td>${primaryTax.desc || ''}</td>`;
+                html += `<td>${formatAddr(locationAddr)}</td>`;
+                html += `<td>${formatAddr(mailingAddr)}</td>`;
+                html += `<td>${locationAddr.telephone_number || ''}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function formatZip(zip) {
+            if (!zip) return '';
+            const cleaned = zip.toString().replace(/[-\s]/g, '');
+            if (cleaned.length === 9) {
+                return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
+            }
+            return cleaned;
+        }
+
+        function downloadCSV() {
+            if (currentData.length === 0) {
+                alert('No data to download. Please search first.');
+                return;
+            }
+
+            const headers = [
+                'NPI', 'Status', 'Type', 'First Name', 'Last Name', 'Organization', 'Credential', 'Gender',
+                'Taxonomy Code', 'Taxonomy',
+                'Location Address 1', 'Location Address 2', 'Location City', 'Location State', 'Location Zip', 'Location Phone',
+                'Mailing Address 1', 'Mailing Address 2', 'Mailing City', 'Mailing State', 'Mailing Zip', 'Mailing Phone'
+            ];
+
+            const rows = currentData.map(p => {
+                const basic = p.basic || {};
+                const addresses = p.addresses || [];
+                const taxonomies = p.taxonomies || [];
+
+                const locationAddr = addresses.find(a => a.address_purpose === 'LOCATION') || addresses[0] || {};
+                const mailingAddr = addresses.find(a => a.address_purpose === 'MAILING') || {};
+                const primaryTax = taxonomies.find(t => t.primary) || taxonomies[0] || {};
+
+                return [
+                    p.number || '',
+                    basic.status || '',
+                    p.enumeration_type || '',
+                    basic.first_name || '',
+                    basic.last_name || '',
+                    basic.organization_name || '',
+                    basic.credential || '',
+                    basic.gender || '',
+                    primaryTax.code || '',
+                    primaryTax.desc || '',
+
+                    locationAddr.address_1 || '',
+                    locationAddr.address_2 || '',
+                    locationAddr.city || '',
+                    locationAddr.state || '',
+                    formatZip(locationAddr.postal_code),
+                    locationAddr.telephone_number || '',
+
+                    mailingAddr.address_1 || '',
+                    mailingAddr.address_2 || '',
+                    mailingAddr.city || '',
+                    mailingAddr.state || '',
+                    formatZip(mailingAddr.postal_code),
+                    mailingAddr.telephone_number || ''
+                ];
+            });
+
+            const csv = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `npi_results_test_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-search on load
+        window.onload = () => searchNPI();
+    </script>
+</body>
+
+</html>

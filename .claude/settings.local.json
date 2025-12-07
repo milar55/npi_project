@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(code --install-extension:*)",
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(dir \"c:\\Users\\rudmi\\.gemini\\antigravity\\scratch\\npi_project\\index.html\")",
+      "Bash(tasklist:*)",
+      "Bash(taskkill /F /PID 10916)",
+      "Bash(del nul)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

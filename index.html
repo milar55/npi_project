@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPPES NPI Registry Lookup</title>
+    <link rel="stylesheet" href="styles.css?v=3">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>NPPES NPI Registry Lookup</h1>
+            <p class="subtitle">Batch search providers by Zip Code with advanced filtering</p>
+        </header>
+
+        <div class="card search-card">
+            <div class="main-search">
+                <label for="zipcodes" class="main-label">
+                    <span class="icon">📍</span> Target Zip Codes
+                    <small>Enter multiple zip codes (one per line)</small>
+                </label>
+                <textarea id="zipcodes" rows="6" placeholder="77478&#10;10001&#10;90210"></textarea>
+            </div>
+
+            <div class="filters-section">
+                <!-- Section 2: Provider Identity Filters -->
+                <div class="filter-section">
+                    <div class="section-header">
+                        <h3>👤 Provider Identity</h3>
+                        <p class="text-muted">Search by name, NPI number, or organization</p>
+                    </div>
+                    <div class="filters-grid identity-grid">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" placeholder="Optional">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" placeholder="Optional">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="orgName">Organization Name</label>
+                            <input type="text" id="orgName" placeholder="Optional">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <select id="state">
+                            <option value="">Any</option>
+                            <option value="AL">Alabama</option>
+                            <option value="AK">Alaska</option>
+                            <option value="AZ">Arizona</option>
+                            <option value="AR">Arkansas</option>
+                            <option value="CA">California</option>
+                            <option value="CO">Colorado</option>
+                            <option value="CT">Connecticut</option>
+                            <option value="DE">Delaware</option>
+                            <option value="FL">Florida</option>
+                            <option value="GA">Georgia</option>
+                            <option value="HI">Hawaii</option>
+                            <option value="ID">Idaho</option>
+                            <option value="IL">Illinois</option>
+                            <option value="IN">Indiana</option>
+                            <option value="IA">Iowa</option>
+                            <option value="KS">Kansas</option>
+                            <option value="KY">Kentucky</option>
+                            <option value="LA">Louisiana</option>
+                            <option value="ME">Maine</option>
+                            <option value="MD">Maryland</option>
+                            <option value="MA">Massachusetts</option>
+                            <option value="MI">Michigan</option>
+                            <option value="MN">Minnesota</option>
+                            <option value="MS">Mississippi</option>
+                            <option value="MO">Missouri</option>
+                            <option value="MT">Montana</option>
+                            <option value="NE">Nebraska</option>
+                            <option value="NV">Nevada</option>
+                            <option value="NH">New Hampshire</option>
+                            <option value="NJ">New Jersey</option>
+                            <option value="NM">New Mexico</option>
+                            <option value="NY">New York</option>
+                            <option value="NC">North Carolina</option>
+                            <option value="ND">North Dakota</option>
+                            <option value="OH">Ohio</option>
+                            <option value="OK">Oklahoma</option>
+                            <option value="OR">Oregon</option>
+                            <option value="PA">Pennsylvania</option>
+                            <option value="RI">Rhode Island</option>
+                            <option value="SC">South Carolina</option>
+                            <option value="SD">South Dakota</option>
+                            <option value="TN">Tennessee</option>
+                            <option value="TX">Texas</option>
+                            <option value="UT">Utah</option>
+                            <option value="VT">Vermont</option>
+                            <option value="VA">Virginia</option>
+                            <option value="WA">Washington</option>
+                            <option value="WV">West Virginia</option>
+                            <option value="WI">Wisconsin</option>
+                            <option value="WY">Wyoming</option>
+                        </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Professional Criteria Filters -->
+                <div class="filter-section">
+                    <div class="section-header">
+                        <h3>🏥 Professional Criteria</h3>
+                        <p class="text-muted">Filter by provider type, specialty, and results limit</p>
+                    </div>
+                    <div class="filters-grid professional-grid">
+                        <div class="form-group">
+                            <label for="npiNumber">NPI Number</label>
+                            <input type="text" id="npiNumber" placeholder="10-digit NPI">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="npiType">NPI Type</label>
+                            <select id="npiType">
+                                <option value="">Any</option>
+                                <option value="NPI-1" selected>Individual (NPI-1)</option>
+                                <option value="NPI-2">Organization (NPI-2)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taxonomy">Taxonomy / Specialty</label>
+                            <div class="multi-select-container" id="taxonomyContainer">
+                                <div id="selectedTags" class="selected-tags"></div>
+                                <input type="text" id="taxonomyInput" placeholder="e.g. Cardiology" autocomplete="off">
+                            </div>
+                            <div id="taxonomyDropdown" class="autocomplete-dropdown hidden"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="limit">Limit per Zip</label>
+                            <select id="limit">
+                                <option value="10">10</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="200" selected>200</option>
+                                <option value="max">Max (All)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-section">
+                <button id="searchBtn" class="btn-primary">
+                    <span class="btn-icon">🔍</span>
+                    Start Batch Search
+                </button>
+            </div>
+        </div>
+
+        <div id="statusCard" class="card status-card hidden">
+            <div class="status-header">
+                <h3>Search Status</h3>
+                <div id="statusIndicator" class="status-indicator"></div>
+            </div>
+            <div id="statusMessage" class="status-message">Initializing...</div>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div id="progressText" class="progress-text">0%</div>
+            </div>
+        </div>
+
+        <div id="resultsCard" class="card results-card hidden">
+            <div class="results-header">
+                <div class="results-info">
+                    <h3>Results</h3>
+                    <div id="resultsSummary" class="results-summary"></div>
+                </div>
+                <button id="downloadBtn" class="btn-secondary">
+                    <span class="btn-icon">⬇️</span>
+                    Download CSV
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>NPI</th>
+                            <th>Status</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Specialty</th>
+                            <th>Address</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div id="emailModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📧 Enter Your Email</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Please provide your email address to download the results.</p>
+                <div class="form-group">
+                    <label for="userEmail">Email Address</label>
+                    <input type="email" id="userEmail" placeholder="your.email@example.com" required>
+                    <span id="emailError" class="error-message hidden">Please enter a valid email address</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modalCancel">Cancel</button>
+                <button class="btn-primary" id="modalSubmit">
+                    <span>Download CSV</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

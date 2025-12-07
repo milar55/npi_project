@@ -1,69 +1,89 @@
-# NPPES NPI Registry Lookup Tool
+# NPI Registry Lookup Tool
 
-This project provides tools to search the NPPES NPI Registry API for healthcare providers. It includes a Python CLI tool for batch processing and a Web Interface for user-friendly searching.
+Web tool to search the NPPES NPI Registry for healthcare providers with batch processing and CSV export.
 
 ## Features
 
-- **Search by Criteria**: Search by taxonomy (specialty), city, state, zip code, etc.
-- **Detailed Output**: Extracts comprehensive provider details including:
-  - **Status** (Active/Inactive)
-  - **Mailing Address** (with Suite/Apt numbers)
-  - **Practice Location Address** (with Suite/Apt numbers)
-  - **Taxonomy** details
-- **Batch Processing**: Support for multiple zip codes.
-- **CSV Export**: Download results in a detailed CSV format.
+- Search by zip code, name, organization, state, specialty
+- Batch process multiple zip codes
+- Autocomplete specialty dropdown (1000+ options)
+- Export to CSV with practice/mailing addresses
+- Real-time progress tracking
 
-## Setup
+## Quick Start
 
-1.  **Prerequisites**: Python 3.x installed.
-2.  **Installation**: No external dependencies required for the basic script (uses standard library `urllib` in proxy, `requests` in lookup).
-    *   If using `npi_lookup.py`, install requests: `pip install requests`
+### Setup
+
+1. **Check Python Installation**
+   - Open Command Prompt (Windows) or Terminal (Mac/Linux)
+   - Type: `python --version` or `python3 --version`
+   - You should see Python 3.x (e.g., Python 3.9.0)
+   - If not installed, download from [python.org](https://www.python.org/downloads/)
+
+2. **Download Project Files**
+   - Extract all files to a folder (e.g., `C:\npi_project` or `~/npi_project`)
+   - Keep all files together in the same folder
+
+3. **Navigate to Project Folder**
+   ```bash
+   cd path/to/npi_project
+   ```
+
+4. **Run the Server**
+   ```bash
+   python proxy_server.py
+   ```
+   *Note: On Mac/Linux, you may need to use `python3` instead of `python`*
+
+5. **Access the Application**
+   - Browser opens automatically to `http://localhost:8001`
+   - If not, manually open this URL in your browser
+
 
 ## Usage
 
-### 1. Python CLI Tool (`npi_lookup.py`)
+1. Enter zip code(s) - one per line
+2. Optional: Add filters (name, specialty, state)
+3. Click "Start Batch Search"
+4. Download CSV results
 
-Run the script from the command line:
 
-```bash
-python npi_lookup.py --city "New York" --state NY --limit 10 --output results.csv
-```
+## Troubleshooting
 
-**Arguments:**
-- `--first_name`, `--last_name`, `--organization_name`
-- `--city`, `--state`, `--postal_code`, `--country_code`
-- `--taxonomy_description`
-- `--number` (NPI Number)
-- `--enumeration_type` (NPI-1 or NPI-2)
-- `--limit` (default 10)
-- `--output` (file path, .csv or .json)
+**"python is not recognized" error**
+- Python is not installed or not in your PATH
+- Solution: Download and install Python from [python.org](https://www.python.org/downloads/)
+- During installation, check "Add Python to PATH"
 
-### 2. Web Interface
+**"No module named..." or import errors**
+- Good news! This project needs no extra packages
+- Make sure you're running `proxy_server.py` (not a different file)
 
-To use the web interface, you need to run the proxy server to handle API requests (avoids CORS issues).
+**Server starts but shows "Connection refused" or "Can't reach page"**
+- Make sure the server is still running (don't close the terminal window)
+- Try accessing `http://localhost:8001/index.html` directly
+- Check if another program is using port 8001
 
-1.  **Start the Proxy Server**:
-    ```bash
-    python proxy_server.py
-    ```
-    This will start a server at `http://localhost:8001`.
+**Search returns 0 providers**
+- Verify the terminal shows "Starting NPI Proxy Server" (server is running)
+- Check that zip codes are valid US postal codes (5 digits)
+- Try a broader search (remove filters like name or specialty)
+- Test with a known populated zip code like `10001` (New York)
 
-2.  **Open the App**:
-    Open `http://localhost:8001/index.html` in your browser.
+**Specialty dropdown is empty or not showing**
+- Check that `nucc_taxonomy_251.csv` file is in the same folder as other files
+- Make sure all project files were extracted together
 
-3.  **Search**:
-    - Enter a Taxonomy (default: Obstetrics & Gynecology).
-    - Enter Zip Codes (one per line).
-    - Click "Search Providers".
-    - Download results as CSV.
+**Browser doesn't open automatically**
+- Manually open your browser and go to: `http://localhost:8001`
+- Make sure you include `http://` in the URL
 
-## Data Fields
+**"Permission denied" error**
+- On Mac/Linux: Try `python3 proxy_server.py`
+- You may need administrator/sudo privileges: `sudo python3 proxy_server.py`
+- Or choose a different port by editing `proxy_server.py` (change PORT = 8001)
 
-The exported CSV includes:
-- **NPI**: National Provider Identifier
-- **Status**: Active (A) or other status codes.
-- **Enumeration Type**: NPI-1 (Individual) or NPI-2 (Organization)
-- **Basic Info**: Name, Credential, Gender
-- **Taxonomy**: Primary specialty code and description.
-- **Location Address**: Full address including Suite/Apt (`address_2`), City, State, Zip, Phone, Fax.
-- **Mailing Address**: Full address including Suite/Apt (`address_2`), City, State, Zip, Phone, Fax.
+**Download button doesn't work**
+- Check if your browser is blocking pop-ups
+- Try a different browser (Chrome, Firefox, Edge)
+- Make sure JavaScript is enabled in browser settings

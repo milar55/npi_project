@@ -1,0 +1,13 @@
+{
+  "name": "npi-project",
+  "version": "1.0.0",
+  "description": "NPI Registry Lookup Tool",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python proxy_server.py"
+  },
+  "dependencies": {
+    "csv-parse": "^5.4.1"
+  },
+  "devDependencies": {}
+}

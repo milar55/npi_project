@@ -1,0 +1,14 @@
+[build]
+  command = "npm install"
+  functions = "netlify/functions"
+  publish = "."
+
+[[redirects]]
+  from = "/api/npi"
+  to = "/.netlify/functions/npi-proxy"
+  status = 200
+
+[[redirects]]
+  from = "/api/taxonomies"
+  to = "/.netlify/functions/taxonomies"
+  status = 200

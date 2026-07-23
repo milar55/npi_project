@@ -1,7 +1,5 @@
-const API_URL = "https://npiregistry.cms.hhs.gov/api/";
-
 let allResults = [];
-let allTaxonomies = []; // Will store {code, desc, grouping}
+let allTaxonomies = [];
 
 // Fetch taxonomies on load
 async function fetchTaxonomies() {
@@ -20,24 +18,10 @@ async function fetchTaxonomies() {
 
 fetchTaxonomies();
 
-// Debounce function to limit API calls
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
 // DOM Elements
 const searchBtn = document.getElementById('searchBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const taxonomyInput = document.getElementById('taxonomyInput');
-const zipcodesInput = document.getElementById('zipcodes');
 const statusCard = document.getElementById('statusCard');
 const resultsCard = document.getElementById('resultsCard');
 const statusMessage = document.getElementById('statusMessage');
@@ -49,7 +33,7 @@ const taxonomyDropdown = document.getElementById('taxonomyDropdown');
 
 // Autocomplete state
 let currentFocus = -1;
-let selectedTaxonomies = new Set(); // Stores description strings for now, or could store objects
+let selectedTaxonomies = new Set();
 
 // Event Listeners
 searchBtn.addEventListener('click', handleSearch);
@@ -82,8 +66,6 @@ function handleTaxonomyInput(e) {
         return;
     }
 
-    // Search by Code or Description
-    // Limit to 50 matches for performance
     const matches = [];
     for (const tax of allTaxonomies) {
         if (matches.length >= 50) break;
@@ -101,11 +83,9 @@ function handleTaxonomyInput(e) {
 }
 
 function handleTaxonomyFocus(e) {
-    // Show top 50 options on focus if input is empty, or filter if not
     if (taxonomyInput.value.trim()) {
         handleTaxonomyInput(e);
     } else {
-        // Just show first 50 as default suggestions
         showAutocomplete(allTaxonomies.slice(0, 50));
     }
 }
@@ -128,7 +108,6 @@ function handleTaxonomyKeydown(e) {
         if (currentFocus > -1 && items[currentFocus]) {
             items[currentFocus].click();
         } else if (taxonomyInput.value) {
-            // If they type something custom, we just add it as text
             addTaxonomy(taxonomyInput.value);
             taxonomyInput.value = '';
             hideAutocomplete();
@@ -136,7 +115,6 @@ function handleTaxonomyKeydown(e) {
     } else if (e.key === 'Escape') {
         hideAutocomplete();
     } else if (e.key === 'Backspace' && !taxonomyInput.value && selectedTaxonomies.size > 0) {
-        // Remove last tag
         const lastTag = Array.from(selectedTaxonomies).pop();
         removeTaxonomy(lastTag);
     }
@@ -160,11 +138,8 @@ function showAutocomplete(matches) {
     matches.forEach(tax => {
         const item = document.createElement('div');
         item.className = 'autocomplete-item';
-        // Display: Description (Code)
         item.innerHTML = `<strong>${tax.desc}</strong> <small>(${tax.code})</small>`;
         item.addEventListener('click', () => {
-            // We add the description to the tags for now, as the API search uses description
-            // If user wants to search by code, they can use the specific code input
             addTaxonomy(tax.desc);
             taxonomyInput.value = '';
             hideAutocomplete();
@@ -208,14 +183,11 @@ function hideAutocomplete() {
 }
 
 async function handleSearch() {
-    // Reset
     allResults = [];
     resultsCard.classList.add('hidden');
 
-    // Get inputs
     const zipcodesText = document.getElementById('zipcodes').value.trim();
 
-    // Get Filter Values
     const filters = {
         npiNumber: document.getElementById('npiNumber').value.trim(),
         npiType: document.getElementById('npiType').value,
@@ -223,12 +195,9 @@ async function handleSearch() {
         lastName: document.getElementById('lastName').value.trim(),
         orgName: document.getElementById('orgName').value.trim(),
         state: document.getElementById('state').value,
-        limit: document.getElementById('limit').value,
-        // Add Taxonomy Code
-        taxonomyCode: document.getElementById('taxonomyCode') ? document.getElementById('taxonomyCode').value.trim() : ''
+        limit: document.getElementById('limit').value
     };
 
-    // Validate
     if (!zipcodesText) {
         alert('Please enter at least one zip code');
         return;
@@ -243,16 +212,13 @@ async function handleSearch() {
         return;
     }
 
-    // Show status
     statusCard.classList.remove('hidden');
     searchBtn.disabled = true;
     searchBtn.textContent = 'Searching...';
 
-    // Process each zip code
     let completed = 0;
     const total = zipcodes.length;
 
-    // Auto-add input text if tags are empty and input is not
     if (selectedTaxonomies.size === 0 && document.getElementById('taxonomyInput').value.trim()) {
         selectedTaxonomies.add(document.getElementById('taxonomyInput').value.trim());
     }
@@ -260,11 +226,6 @@ async function handleSearch() {
     const taxonomiesList = selectedTaxonomies.size > 0 ? Array.from(selectedTaxonomies) : [null];
 
     for (const zipcode of zipcodes) {
-        // If we have taxonomy tags, we iterate them. 
-        // If we ALSO have a taxonomy code, we should probably combine them or warn?
-        // For now, let's assume if taxonomyCode is present, it's sent with every request.
-        // If taxonomy tags are present, we make separate requests for each description.
-
         for (const tax of taxonomiesList) {
             const taxLabel = tax ? ` for ${tax}` : '';
             updateStatus(`Searching ${zipcode}${taxLabel}... (${completed + 1}/${total})`, completed, total);
@@ -272,62 +233,9 @@ async function handleSearch() {
             try {
                 const currentFilters = { ...filters };
                 if (tax) currentFilters.taxonomy_description = tax;
-                // Note: 'taxonomy' param in NPI API usually maps to code, but we used it for description in previous code.
-                // Let's be explicit: 
-                // If user entered a code in the new input, send it as 'taxonomy_description' or 'taxonomy'? 
-                // The proxy maps 'taxonomy_description' -> 'taxonomy_description'.
-                // It maps 'taxonomy' -> nothing? Wait, proxy maps 'taxonomy_description'.
-                // If we want to search by code, we should pass it as 'taxonomy_description'? No, that's for text.
-                // We need to check if proxy supports 'taxonomy' (code).
-                // Looking at proxy_server.py valid_params: 'taxonomy_description' is there. 'taxonomy' is NOT.
-                // But 'number' is there.
-                // Wait, I need to check if I added 'taxonomy' to valid_params in proxy_server.py?
-                // I did NOT add 'taxonomy' to valid_params in proxy_server.py. I only added 'taxonomy_description'.
-                // However, the NPI API uses `taxonomy_description` for description.
-                // Does it use `taxonomy` for code? Yes, usually.
-                // I should have added `taxonomy` to valid_params in proxy_server.py if I want to support code search directly.
-                // BUT, I can pass the code as `taxonomy_description`? No, that won't work well.
-
-                // Let's assume for this iteration I will send the code as `taxonomy_description` if the user put it there? 
-                // No, that's bad.
-
-                // FIX: I will pass `taxonomyCode` as `taxonomy_description` if `taxonomy_description` is empty?
-                // No, I should fix the proxy to accept `taxonomy` param for code.
-                // OR, I can just pass it as `taxonomy_description` and hope the API is smart? 
-                // Actually, the NPI API documentation says:
-                // taxonomy_description: "Taxonomy Description"
-                // taxonomy: "Taxonomy Code" (This is implied in some docs, but let's check my proxy).
-
-                // My proxy `valid_params` list:
-                // 'number', 'taxonomy_description', 'postal_code', 'limit', 'country_code', 
-                // 'enumeration_type', 'first_name', 'last_name', 'organization_name', 'state', 'skip'
-
-                // It seems I missed `taxonomy` (the code) in the proxy!
-                // I will update the proxy to include `taxonomy` in valid_params in a subsequent step or just use what I have.
-                // If I can't update proxy now, I'll have to rely on description.
-                // BUT, the user asked for "Taxonomy Code" field.
-
-                // Workaround: I will send the code in `taxonomy_description`? No.
-                // I will update the proxy in the next step if needed. For now, let's just send it.
-                // Wait, `app.js` calls `/api/npi?...`. The proxy filters params.
-                // If I send `taxonomy=...`, the proxy will ignore it because it's not in `valid_params`.
-                // I MUST update the proxy to accept `taxonomy`.
-
-                // I will add `taxonomy` to the query params here, and I will update the proxy in the next turn if I haven't already.
-                // (Actually, I can just update the proxy again, or I can check if I can sneak it in).
-
-                // Let's look at `proxy_server.py` again.
-                // valid_params = ['number', 'taxonomy_description', ...]
-                // It does NOT have 'taxonomy'.
-
-                // I will update `app.js` to send `taxonomy` anyway, and I will fix the proxy immediately after.
-
-                if (filters.taxonomyCode) currentFilters.taxonomy = filters.taxonomyCode;
-                if (tax) currentFilters.taxonomy_description = tax;
 
                 const results = await searchNPI(zipcode, currentFilters);
 
-                // Merge results avoiding duplicates
                 results.forEach(r => {
                     if (!allResults.some(existing => existing.number === r.number)) {
                         allResults.push(r);
@@ -345,7 +253,6 @@ async function handleSearch() {
         updateStatus(`Completed ${completed}/${total} zip codes`, completed, total);
     }
 
-    // Show results
     displayResults();
     searchBtn.disabled = false;
     searchBtn.innerHTML = '<span class="btn-icon">🔍</span> Start Batch Search';
@@ -371,7 +278,6 @@ async function searchNPI(zipcode, filters) {
         });
 
         if (filters.npiNumber) params.append('number', filters.npiNumber);
-        if (filters.taxonomy) params.append('taxonomy', filters.taxonomy);
         if (filters.taxonomy_description) params.append('taxonomy_description', filters.taxonomy_description);
         if (filters.npiType) params.append('enumeration_type', filters.npiType);
         if (filters.firstName) params.append('first_name', filters.firstName);
@@ -598,32 +504,7 @@ async function handleEmailSubmit() {
 
     emailError.classList.add('hidden');
 
-    // Get zip codes from the textarea
-    const zipCodes = document.getElementById('zipcodes').value.trim();
-    const resultCount = allResults.length;
-
-    // Send email to server
-    try {
-        const response = await fetch('/api/save-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: email,
-                zip_codes: zipCodes,
-                result_count: resultCount
-            })
-        });
-
-        if (!response.ok) {
-            console.error('Failed to save email');
-        }
-    } catch (error) {
-        console.error('Error saving email:', error);
-    }
-
-    // Hide modal and trigger download
+    // Hide modal and trigger download (no server tracking for now)
     hideEmailModal();
     downloadCSV();
 }
